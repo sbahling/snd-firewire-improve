@@ -132,6 +132,8 @@ static int hwdep_release(struct snd_hwdep *hwdep, struct file *file)
 		tscm->dev_lock_count = 0;
 	spin_unlock_irq(&tscm->lock);
 
+	vfree(tscm->status);
+
 	return 0;
 }
 
@@ -163,6 +165,65 @@ static int hwdep_compat_ioctl(struct snd_hwdep *hwdep, struct file *file,
 #define hwdep_compat_ioctl NULL
 #endif
 
+static int __maybe_unused hwdep_vm_fault(struct vm_fault *vmf)
+{
+	struct snd_tscm *tscm = vmf->vma->vm_private_data;
+	u8 *addr = (u8 *)tscm->status;
+	unsigned long offset;
+	struct page *page;
+
+	if (!tscm)
+		return VM_FAULT_SIGBUS;
+
+	offset = vmf->pgoff << PAGE_SHIFT;
+	if (offset < PAGE_ALIGN(sizeof(tscm->status)) - PAGE_SIZE)
+		return VM_FAULT_SIGBUS;
+	addr += offset;
+
+	page = vmalloc_to_page(addr);
+	get_page(page);
+	vmf->page = page;
+
+	return 0;
+}
+
+static const __maybe_unused struct vm_operations_struct hwdep_vm_ops = {
+	.fault	= hwdep_vm_fault,
+};
+
+/* Supported only on cache coherent architectures. */
+#if defined(CONFIG_X86) || defined(CONFIG_PPC) || defined(CONFIG_ALPHA)
+static int __maybe_unused hwdep_mmap(struct snd_hwdep *hwdep,
+				struct file *filp, struct vm_area_struct *vma)
+{
+	struct snd_tscm *tscm = hwdep->private_data;
+	unsigned long requested_pages, actual_pages;
+
+	if (!(vma->vm_flags & VM_READ))
+		return -EINVAL;
+
+	requested_pages = vma_pages(vma);
+	actual_pages = (((u64)tscm->status & ~PAGE_MASK) +
+			sizeof(*tscm->status)+ PAGE_SIZE - 1) >> PAGE_SHIFT;
+	if (requested_pages < actual_pages)
+		return -EINVAL;
+
+	vma->vm_ops = &hwdep_vm_ops;
+	vma->vm_flags |= VM_DONTEXPAND | VM_DONTDUMP;
+	vma->vm_private_data = tscm;
+
+	return 0;
+}
+#endif
+
+static void hwdep_free(struct snd_hwdep *hwdep)
+{
+	struct snd_tscm *tscm = hwdep->private_data;
+
+	vfree(tscm->status);
+	tscm->status = NULL;
+}
+
 int snd_tscm_create_hwdep_device(struct snd_tscm *tscm)
 {
 	static const struct snd_hwdep_ops ops = {
@@ -171,18 +232,27 @@ int snd_tscm_create_hwdep_device(struct snd_tscm *tscm)
 		.poll		= hwdep_poll,
 		.ioctl		= hwdep_ioctl,
 		.ioctl_compat	= hwdep_compat_ioctl,
+		.mmap		= hwdep_mmap,
 	};
 	struct snd_hwdep *hwdep;
 	int err;
 
+	tscm->status = vzalloc(sizeof(*tscm->status));
+	if (!tscm->status)
+		return -ENOMEM;
+
 	err = snd_hwdep_new(tscm->card, "Tascam", 0, &hwdep);
-	if (err < 0)
+	if (err < 0) {
+		vfree(tscm->status);
+		tscm->status = NULL;
 		return err;
+	}
 
 	strcpy(hwdep->name, "Tascam");
 	hwdep->iface = SNDRV_HWDEP_IFACE_FW_TASCAM;
 	hwdep->ops = ops;
 	hwdep->private_data = tscm;
+	hwdep->private_free = hwdep_free;
 	hwdep->exclusive = true;
 
 	return err;

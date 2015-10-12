@@ -117,6 +117,21 @@ int amdtp_tscm_add_pcm_hw_constraints(struct amdtp_stream *s,
 	return amdtp_stream_add_pcm_hw_constraints(s, runtime);
 }
 
+static void read_control_messages(struct amdtp_stream *s,
+				  __be32 *buffer, unsigned int data_blocks)
+{
+	struct snd_tscm *tscm = container_of(s, struct snd_tscm, tx_stream);
+	unsigned int index = 0;
+	unsigned int i;
+
+	for (i = 0; i < data_blocks; i++) {
+		index = be32_to_cpu(buffer[0]) % 64;
+		tscm->status->status[index] =
+				be32_to_cpu(buffer[s->data_block_quadlets - 1]);
+		buffer += s->data_block_quadlets;
+	}
+}
+
 static unsigned int process_tx_data_blocks(struct amdtp_stream *s,
 					   __be32 *buffer,
 					   unsigned int data_blocks,
@@ -128,7 +143,7 @@ static unsigned int process_tx_data_blocks(struct amdtp_stream *s,
 	if (data_blocks > 0 && pcm)
 		read_pcm_s32(s, pcm, buffer, data_blocks);
 
-	/* A place holder for control messages. */
+	read_control_messages(s, buffer, data_blocks);
 
 	return data_blocks;
 }
