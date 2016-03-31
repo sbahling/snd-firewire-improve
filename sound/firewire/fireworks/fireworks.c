@@ -207,12 +207,6 @@ efw_card_free(struct snd_card *card)
 {
 	struct snd_efw *efw = card->private_data;
 
-	if (efw->card_index >= 0) {
-		mutex_lock(&devices_mutex);
-		clear_bit(efw->card_index, devices_used);
-		mutex_unlock(&devices_mutex);
-	}
-
 	efw_free(card->private_data);
 }
 
@@ -220,30 +214,15 @@ static void
 do_registration(struct work_struct *work)
 {
 	struct snd_efw *efw = container_of(work, struct snd_efw, dwork.work);
-	unsigned int card_index;
 	int err;
 
 	if (efw->registered)
 		return;
 
-	mutex_lock(&devices_mutex);
-
-	/* check registered cards */
-	for (card_index = 0; card_index < SNDRV_CARDS; ++card_index) {
-		if (!test_bit(card_index, devices_used) && enable[card_index])
-			break;
-	}
-	if (card_index >= SNDRV_CARDS) {
-		mutex_unlock(&devices_mutex);
-		return;
-	}
-
 	err = snd_card_new(&efw->unit->device, index[card_index],
 			   id[card_index], THIS_MODULE, 0, &efw->card);
-	if (err < 0) {
-		mutex_unlock(&devices_mutex);
+	if (err < 0)
 		return;
-	}
 
 	/* prepare response buffer */
 	snd_efw_resp_buf_size = clamp(snd_efw_resp_buf_size,
@@ -284,9 +263,6 @@ do_registration(struct work_struct *work)
 	if (err < 0)
 		goto error;
 
-	set_bit(card_index, devices_used);
-	mutex_unlock(&devices_mutex);
-
 	/*
 	 * After registered, efw instance can be released corresponding to
 	 * releasing the sound card instance.
@@ -297,7 +273,6 @@ do_registration(struct work_struct *work)
 
 	return;
 error:
-	mutex_unlock(&devices_mutex);
 	snd_efw_transaction_remove_instance(efw);
 	snd_efw_stream_destroy_duplex(efw);
 	snd_card_free(efw->card);
