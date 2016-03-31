@@ -18,20 +18,6 @@ MODULE_DESCRIPTION("BridgeCo BeBoB driver");
 MODULE_AUTHOR("Takashi Sakamoto <o-takashi@sakamocchi.jp>");
 MODULE_LICENSE("GPL v2");
 
-static int index[SNDRV_CARDS]	= SNDRV_DEFAULT_IDX;
-static char *id[SNDRV_CARDS]	= SNDRV_DEFAULT_STR;
-static bool enable[SNDRV_CARDS]	= SNDRV_DEFAULT_ENABLE_PNP;
-
-module_param_array(index, int, NULL, 0444);
-MODULE_PARM_DESC(index, "card index");
-module_param_array(id, charp, NULL, 0444);
-MODULE_PARM_DESC(id, "ID string");
-module_param_array(enable, bool, NULL, 0444);
-MODULE_PARM_DESC(enable, "enable BeBoB sound card");
-
-static DEFINE_MUTEX(devices_mutex);
-static DECLARE_BITMAP(devices_used, SNDRV_CARDS);
-
 /* Offsets from information register. */
 #define INFO_OFFSET_BEBOB_VERSION	0x08
 #define INFO_OFFSET_GUID		0x10
@@ -148,10 +134,6 @@ bebob_card_free(struct snd_card *card)
 {
 	struct snd_bebob *bebob = card->private_data;
 
-	mutex_lock(&devices_mutex);
-	clear_bit(bebob->card_index, devices_used);
-	mutex_unlock(&devices_mutex);
-
 	bebob_free(card->private_data);
 }
 
@@ -185,29 +167,15 @@ do_registration(struct work_struct *work)
 {
 	struct snd_bebob *bebob =
 			container_of(work, struct snd_bebob, dwork.work);
-	unsigned int card_index;
 	int err;
 
 	if (bebob->registered)
 		return;
 
-	mutex_lock(&devices_mutex);
-
-	for (card_index = 0; card_index < SNDRV_CARDS; card_index++) {
-		if (!test_bit(card_index, devices_used) && enable[card_index])
-			break;
-	}
-	if (card_index >= SNDRV_CARDS) {
-		mutex_unlock(&devices_mutex);
-		return;
-	}
-
 	err = snd_card_new(&bebob->unit->device, index[card_index],
 			   id[card_index], THIS_MODULE, 0, &bebob->card);
-	if (err < 0) {
-		mutex_unlock(&devices_mutex);
+	if (err < 0)
 		return;
-	}
 
 	err = name_device(bebob);
 	if (err < 0)
@@ -248,9 +216,6 @@ do_registration(struct work_struct *work)
 	if (err < 0)
 		goto error;
 
-	set_bit(card_index, devices_used);
-	mutex_unlock(&devices_mutex);
-
 	/*
 	 * After registered, bebob instance can be released corresponding to
 	 * releasing the sound card instance.
@@ -261,7 +226,6 @@ do_registration(struct work_struct *work)
 
 	return;
 error:
-	mutex_unlock(&devices_mutex);
 	snd_bebob_stream_destroy_duplex(bebob);
 	snd_card_free(bebob->card);
 	dev_info(&bebob->unit->device,

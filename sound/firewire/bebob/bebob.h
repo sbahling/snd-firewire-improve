@@ -81,7 +81,6 @@ struct snd_bebob_spec {
 struct snd_bebob {
 	struct snd_card *card;
 	struct fw_unit *unit;
-	int card_index;
 
 	struct mutex mutex;
 	spinlock_t lock;
