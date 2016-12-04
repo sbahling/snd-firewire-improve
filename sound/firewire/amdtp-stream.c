@@ -160,7 +160,8 @@ int amdtp_stream_add_pcm_hw_constraints(struct amdtp_stream *s,
 		   SNDRV_PCM_INFO_INTERLEAVED |
 		   SNDRV_PCM_INFO_JOINT_DUPLEX |
 		   SNDRV_PCM_INFO_MMAP |
-		   SNDRV_PCM_INFO_MMAP_VALID;
+		   SNDRV_PCM_INFO_MMAP_VALID |
+		   SNDRV_PCM_INFO_NO_PERIOD_WAKEUP;
 
 	/* SNDRV_PCM_INFO_BATCH */
 	hw->periods_min = 2;
@@ -402,12 +403,25 @@ static int queue_packet(struct amdtp_stream *s, unsigned int header_length,
 			unsigned int payload_length)
 {
 	struct fw_iso_packet p = {0};
+	struct snd_pcm_substream *pcm;
 	int err = 0;
 
 	if (IS_ERR(s->context))
 		goto end;
 
-	p.interrupt = IS_ALIGNED(s->packet_index + 1, s->packets_per_period);
+	/*
+	 * Applications can process packets in their process contexts by
+	 * executing ioctl(2) with some commands such as HWSYNC, REWIND,
+	 * FORWARD, STATUS and STATUS_EXT. These commands are available only
+	 * after PCM runtime is running. As long as the PCM runtime is not
+	 * running, packets are processed in interrupt context.
+	 */
+	pcm = READ_ONCE(s->pcm);
+	if (!pcm || !pcm->runtime->no_period_wakeup) {
+		p.interrupt = IS_ALIGNED(s->packet_index + 1,
+					 s->packets_per_period);
+	}
+
 	p.tag = s->tag;
 	p.header_length = header_length;
 	if (payload_length > 0)
@@ -796,7 +810,8 @@ static void amdtp_stream_first_callback(struct fw_iso_context *context,
 			s->handle_packet = handle_in_packet;
 	} else {
 		packets = header_length / 4;
-		cycle = increment_cycle_count(cycle, PACKETS_PER_PERIOD - packets);
+		cycle = increment_cycle_count(cycle,
+					      s->packets_per_period - packets);
 		context->callback.sc = out_stream_callback;
 		if (s->flags & CIP_NO_HEADER)
 			s->handle_packet = handle_out_packet_without_header;
