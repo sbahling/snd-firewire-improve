@@ -57,8 +57,8 @@
 #define AMDTP_FDF_NO_DATA	0xff
 
 /* TODO: make these configurable */
-#define INTERRUPT_INTERVAL	16
-#define QUEUE_LENGTH		48
+#define PERIODS_PER_BUFFER	3
+#define PACKETS_PER_PERIOD	16
 
 #define IN_PACKET_HEADER_SIZE	4
 #define OUT_PACKET_HEADER_SIZE	0
@@ -407,7 +407,7 @@ static int queue_packet(struct amdtp_stream *s, unsigned int header_length,
 	if (IS_ERR(s->context))
 		goto end;
 
-	p.interrupt = IS_ALIGNED(s->packet_index + 1, INTERRUPT_INTERVAL);
+	p.interrupt = IS_ALIGNED(s->packet_index + 1, s->packets_per_period);
 	p.tag = s->tag;
 	p.header_length = header_length;
 	if (payload_length > 0)
@@ -421,7 +421,7 @@ static int queue_packet(struct amdtp_stream *s, unsigned int header_length,
 		goto end;
 	}
 
-	if (++s->packet_index >= QUEUE_LENGTH)
+	if (++s->packet_index >= s->packets_per_buffer)
 		s->packet_index = 0;
 end:
 	return err;
@@ -699,7 +699,7 @@ static void out_stream_callback(struct fw_iso_context *context, u32 tstamp,
 	cycle = compute_cycle_count(tstamp);
 
 	/* Align to actual cycle count for the last packet. */
-	cycle = increment_cycle_count(cycle, QUEUE_LENGTH - packets);
+	cycle = increment_cycle_count(cycle, s->packets_per_buffer - packets);
 
 	for (i = 0; i < packets; ++i) {
 		cycle = increment_cycle_count(cycle, 1);
@@ -796,7 +796,7 @@ static void amdtp_stream_first_callback(struct fw_iso_context *context,
 			s->handle_packet = handle_in_packet;
 	} else {
 		packets = header_length / 4;
-		cycle = increment_cycle_count(cycle, QUEUE_LENGTH - packets);
+		cycle = increment_cycle_count(cycle, PACKETS_PER_PERIOD - packets);
 		context->callback.sc = out_stream_callback;
 		if (s->flags & CIP_NO_HEADER)
 			s->handle_packet = handle_out_packet_without_header;
@@ -853,6 +853,9 @@ int amdtp_stream_start(struct amdtp_stream *s, int channel, int speed)
 	s->syt_offset_state = initial_state[s->sfc].syt_offset;
 	s->last_syt_offset = TICKS_PER_CYCLE;
 
+	s->packets_per_period = PACKETS_PER_PERIOD;
+	s->packets_per_buffer = s->packets_per_period * PERIODS_PER_BUFFER;
+
 	/* initialize packet buffer */
 	if (s->direction == AMDTP_IN_STREAM) {
 		dir = DMA_FROM_DEVICE;
@@ -863,7 +866,8 @@ int amdtp_stream_start(struct amdtp_stream *s, int channel, int speed)
 		type = FW_ISO_CONTEXT_TRANSMIT;
 		header_size = OUT_PACKET_HEADER_SIZE;
 	}
-	err = iso_packets_buffer_init(&s->buffer, s->unit, QUEUE_LENGTH,
+	err = iso_packets_buffer_init(&s->buffer, s->unit,
+				      s->packets_per_buffer,
 				      amdtp_stream_get_max_payload(s), dir);
 	if (err < 0)
 		goto err_unlock;

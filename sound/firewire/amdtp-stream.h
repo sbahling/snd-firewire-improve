@@ -115,6 +115,8 @@ struct amdtp_stream {
 			unsigned int payload_quadlets, unsigned int cycle,
 			unsigned int index);
 	unsigned int max_payload_length;
+	unsigned int packets_per_period;
+	unsigned int packets_per_buffer;
 
 	/* For CIP headers. */
 	unsigned int source_node_id_field;
