@@ -285,7 +285,8 @@ static int pcm_capture_prepare(struct snd_pcm_substream *substream)
 
 	mutex_lock(&oxfw->mutex);
 	err = snd_oxfw_stream_start_simplex(oxfw, &oxfw->tx_stream,
-					    runtime->rate, runtime->channels);
+					    runtime->rate, runtime->channels,
+					    runtime->period_size);
 	mutex_unlock(&oxfw->mutex);
 	if (err < 0)
 		goto end;
@@ -302,7 +303,8 @@ static int pcm_playback_prepare(struct snd_pcm_substream *substream)
 
 	mutex_lock(&oxfw->mutex);
 	err = snd_oxfw_stream_start_simplex(oxfw, &oxfw->rx_stream,
-					    runtime->rate, runtime->channels);
+					    runtime->rate, runtime->channels,
+					    runtime->period_size);
 	mutex_unlock(&oxfw->mutex);
 	if (err < 0)
 		goto end;

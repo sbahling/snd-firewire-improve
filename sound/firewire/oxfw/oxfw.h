@@ -106,7 +106,8 @@ int snd_oxfw_stream_init_simplex(struct snd_oxfw *oxfw,
 				 struct amdtp_stream *stream);
 int snd_oxfw_stream_start_simplex(struct snd_oxfw *oxfw,
 				  struct amdtp_stream *stream,
-				  unsigned int rate, unsigned int pcm_channels);
+				  unsigned int rate, unsigned int pcm_channels,
+				  unsigned int pcm_frames_per_period);
 void snd_oxfw_stream_stop_simplex(struct snd_oxfw *oxfw,
 				  struct amdtp_stream *stream);
 void snd_oxfw_stream_destroy_simplex(struct snd_oxfw *oxfw,

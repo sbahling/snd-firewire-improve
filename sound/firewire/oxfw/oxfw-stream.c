@@ -113,7 +113,8 @@ static void stop_stream(struct snd_oxfw *oxfw, struct amdtp_stream *stream)
 }
 
 static int start_stream(struct snd_oxfw *oxfw, struct amdtp_stream *stream,
-			unsigned int rate, unsigned int pcm_channels)
+			unsigned int rate, unsigned int pcm_channels,
+			unsigned int pcm_frames_per_period)
 {
 	u8 **formats;
 	struct cmp_connection *conn;
@@ -165,8 +166,8 @@ static int start_stream(struct snd_oxfw *oxfw, struct amdtp_stream *stream,
 	if (err < 0)
 		goto end;
 
-	err = amdtp_stream_start(stream,
-				 conn->resources.channel, conn->speed, 0);
+	err = amdtp_stream_start(stream, conn->resources.channel, conn->speed,
+				 pcm_frames_per_period);
 	if (err < 0) {
 		cmp_connection_break(conn);
 		goto end;
@@ -251,7 +252,8 @@ end:
 
 int snd_oxfw_stream_start_simplex(struct snd_oxfw *oxfw,
 				  struct amdtp_stream *stream,
-				  unsigned int rate, unsigned int pcm_channels)
+				  unsigned int rate, unsigned int pcm_channels,
+				  unsigned int pcm_frames_per_period)
 {
 	struct amdtp_stream *opposite;
 	struct snd_oxfw_stream_formation formation;
@@ -318,7 +320,8 @@ int snd_oxfw_stream_start_simplex(struct snd_oxfw *oxfw,
 		/* Start opposite stream if needed. */
 		if (opposite && !amdtp_stream_running(opposite) &&
 		    (opposite_substreams > 0)) {
-			err = start_stream(oxfw, opposite, rate, 0);
+			err = start_stream(oxfw, opposite, rate, 0,
+					   pcm_frames_per_period);
 			if (err < 0) {
 				dev_err(&oxfw->unit->device,
 					"fail to restart stream: %d\n", err);
@@ -329,7 +332,8 @@ int snd_oxfw_stream_start_simplex(struct snd_oxfw *oxfw,
 
 	/* Start requested stream. */
 	if (!amdtp_stream_running(stream)) {
-		err = start_stream(oxfw, stream, rate, pcm_channels);
+		err = start_stream(oxfw, stream, rate, pcm_channels,
+				   pcm_frames_per_period);
 		if (err < 0)
 			dev_err(&oxfw->unit->device,
 				"fail to start stream: %d\n", err);
