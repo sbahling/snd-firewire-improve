@@ -485,7 +485,7 @@ destroy_both_connections(struct snd_bebob *bebob)
 
 static int
 start_stream(struct snd_bebob *bebob, struct amdtp_stream *stream,
-	     unsigned int rate)
+	     unsigned int rate, unsigned int pcm_frames_per_period)
 {
 	struct cmp_connection *conn;
 	int err = 0;
@@ -503,8 +503,8 @@ start_stream(struct snd_bebob *bebob, struct amdtp_stream *stream,
 	}
 
 	/* start amdtp stream */
-	err = amdtp_stream_start(stream,
-				 conn->resources.channel, conn->speed, 0);
+	err = amdtp_stream_start(stream, conn->resources.channel, conn->speed,
+				 pcm_frames_per_period);
 end:
 	return err;
 }
@@ -554,7 +554,8 @@ end:
 	return err;
 }
 
-int snd_bebob_stream_start_duplex(struct snd_bebob *bebob, unsigned int rate)
+int snd_bebob_stream_start_duplex(struct snd_bebob *bebob, unsigned int rate,
+				  unsigned int pcm_frames_per_period)
 {
 	const struct snd_bebob_rate_spec *rate_spec = bebob->spec->rate;
 	unsigned int curr_rate;
@@ -624,7 +625,8 @@ int snd_bebob_stream_start_duplex(struct snd_bebob *bebob, unsigned int rate)
 		if (err < 0)
 			goto end;
 
-		err = start_stream(bebob, &bebob->rx_stream, rate);
+		err = start_stream(bebob, &bebob->rx_stream, rate,
+				   pcm_frames_per_period);
 		if (err < 0) {
 			dev_err(&bebob->unit->device,
 				"fail to run AMDTP master stream:%d\n", err);
@@ -656,7 +658,8 @@ int snd_bebob_stream_start_duplex(struct snd_bebob *bebob, unsigned int rate)
 
 	/* start slave if needed */
 	if (!amdtp_stream_running(&bebob->tx_stream)) {
-		err = start_stream(bebob, &bebob->tx_stream, rate);
+		err = start_stream(bebob, &bebob->tx_stream, rate,
+				   pcm_frames_per_period);
 		if (err < 0) {
 			dev_err(&bebob->unit->device,
 				"fail to run AMDTP slave stream:%d\n", err);

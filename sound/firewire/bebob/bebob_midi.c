@@ -19,7 +19,7 @@ static int midi_capture_open(struct snd_rawmidi_substream *substream)
 
 	mutex_lock(&bebob->mutex);
 	bebob->substreams_counter++;
-	err = snd_bebob_stream_start_duplex(bebob, 0);
+	err = snd_bebob_stream_start_duplex(bebob, 0, 0);
 	mutex_unlock(&bebob->mutex);
 	if (err < 0)
 		snd_bebob_stream_lock_release(bebob);
@@ -38,7 +38,7 @@ static int midi_playback_open(struct snd_rawmidi_substream *substream)
 
 	mutex_lock(&bebob->mutex);
 	bebob->substreams_counter++;
-	err = snd_bebob_stream_start_duplex(bebob, 0);
+	err = snd_bebob_stream_start_duplex(bebob, 0, 0);
 	mutex_unlock(&bebob->mutex);
 	if (err < 0)
 		snd_bebob_stream_lock_release(bebob);
