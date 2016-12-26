@@ -54,7 +54,7 @@ stop_stream(struct snd_efw *efw, struct amdtp_stream *stream)
 
 static int
 start_stream(struct snd_efw *efw, struct amdtp_stream *stream,
-	     unsigned int sampling_rate)
+	     unsigned int sampling_rate, unsigned int pcm_frames_per_period)
 {
 	struct cmp_connection *conn;
 	unsigned int mode, pcm_channels, midi_ports;
@@ -86,7 +86,8 @@ start_stream(struct snd_efw *efw, struct amdtp_stream *stream,
 
 	/* start amdtp stream */
 	err = amdtp_stream_start(stream,
-				 conn->resources.channel, conn->speed, 0);
+				 conn->resources.channel, conn->speed,
+				 pcm_frames_per_period);
 	if (err < 0) {
 		stop_stream(efw, stream);
 		goto end;
@@ -188,13 +189,14 @@ end:
 	return err;
 }
 
-int snd_efw_stream_start_duplex(struct snd_efw *efw, unsigned int rate)
+int snd_efw_stream_start_duplex(struct snd_efw *efw, unsigned int rate,
+				unsigned int pcm_frames_per_period)
 {
 	unsigned int curr_rate;
 	int err = 0;
 
 	/* Need no substreams */
-	if (efw->playback_substreams == 0 && efw->capture_substreams  == 0)
+	if (efw->playback_substreams == 0 && efw->capture_substreams == 0)
 		goto end;
 
 	/*
@@ -228,7 +230,8 @@ int snd_efw_stream_start_duplex(struct snd_efw *efw, unsigned int rate)
 		if (err < 0)
 			goto end;
 
-		err = start_stream(efw, &efw->rx_stream, rate);
+		err = start_stream(efw, &efw->rx_stream, rate,
+				   pcm_frames_per_period);
 		if (err < 0) {
 			dev_err(&efw->unit->device,
 				"fail to start AMDTP master stream:%d\n", err);
@@ -239,7 +242,8 @@ int snd_efw_stream_start_duplex(struct snd_efw *efw, unsigned int rate)
 	/* start slave if needed */
 	if (efw->capture_substreams > 0 &&
 	    !amdtp_stream_running(&efw->tx_stream)) {
-		err = start_stream(efw, &efw->tx_stream, rate);
+		err = start_stream(efw, &efw->tx_stream, rate,
+				   pcm_frames_per_period);
 		if (err < 0) {
 			dev_err(&efw->unit->device,
 				"fail to start AMDTP slave stream:%d\n", err);

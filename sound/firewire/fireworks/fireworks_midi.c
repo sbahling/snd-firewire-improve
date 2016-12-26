@@ -19,7 +19,7 @@ static int midi_capture_open(struct snd_rawmidi_substream *substream)
 
 	mutex_lock(&efw->mutex);
 	efw->capture_substreams++;
-	err = snd_efw_stream_start_duplex(efw, 0);
+	err = snd_efw_stream_start_duplex(efw, 0, 0);
 	mutex_unlock(&efw->mutex);
 	if (err < 0)
 		snd_efw_stream_lock_release(efw);
@@ -39,7 +39,7 @@ static int midi_playback_open(struct snd_rawmidi_substream *substream)
 
 	mutex_lock(&efw->mutex);
 	efw->playback_substreams++;
-	err = snd_efw_stream_start_duplex(efw, 0);
+	err = snd_efw_stream_start_duplex(efw, 0, 0);
 	mutex_unlock(&efw->mutex);
 	if (err < 0)
 		snd_efw_stream_lock_release(efw);
