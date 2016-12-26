@@ -122,7 +122,7 @@ static int start_isoc_ctx(struct snd_motu *motu, struct amdtp_stream *stream)
 		resources = &motu->tx_resources;
 
 	err = amdtp_stream_start(stream, resources->channel,
-				 fw_parent_device(motu->unit)->max_speed);
+				 fw_parent_device(motu->unit)->max_speed, 0);
 	if (err < 0)
 		return err;
 

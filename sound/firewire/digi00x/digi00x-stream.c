@@ -316,7 +316,7 @@ int snd_dg00x_stream_start_duplex(struct snd_dg00x *dg00x, unsigned int rate)
 
 		err = amdtp_stream_start(&dg00x->rx_stream,
 				dg00x->rx_resources.channel,
-				fw_parent_device(dg00x->unit)->max_speed);
+				fw_parent_device(dg00x->unit)->max_speed, 0);
 		if (err < 0)
 			goto error;
 
@@ -334,7 +334,7 @@ int snd_dg00x_stream_start_duplex(struct snd_dg00x *dg00x, unsigned int rate)
 	if (!amdtp_stream_running(&dg00x->tx_stream)) {
 		err = amdtp_stream_start(&dg00x->tx_stream,
 				dg00x->tx_resources.channel,
-				fw_parent_device(dg00x->unit)->max_speed);
+				fw_parent_device(dg00x->unit)->max_speed, 0);
 		if (err < 0)
 			goto error;
 

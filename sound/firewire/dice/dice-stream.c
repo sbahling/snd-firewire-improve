@@ -310,7 +310,7 @@ static int start_streams(struct snd_dice *dice, enum amdtp_stream_direction dir,
 		}
 
 		err = amdtp_stream_start(&streams[i], resources[i].channel,
-					 fw_dev->max_speed);
+				fw_parent_device(dice->unit)->max_speed, 0);
 		if (err < 0)
 			return err;
 	}

@@ -166,8 +166,7 @@ static int start_stream(struct snd_oxfw *oxfw, struct amdtp_stream *stream,
 		goto end;
 
 	err = amdtp_stream_start(stream,
-				 conn->resources.channel,
-				 conn->speed);
+				 conn->resources.channel, conn->speed, 0);
 	if (err < 0) {
 		cmp_connection_break(conn);
 		goto end;

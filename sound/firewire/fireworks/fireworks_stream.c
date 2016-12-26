@@ -86,8 +86,7 @@ start_stream(struct snd_efw *efw, struct amdtp_stream *stream,
 
 	/* start amdtp stream */
 	err = amdtp_stream_start(stream,
-				 conn->resources.channel,
-				 conn->speed);
+				 conn->resources.channel, conn->speed, 0);
 	if (err < 0) {
 		stop_stream(efw, stream);
 		goto end;

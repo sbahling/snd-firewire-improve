@@ -504,8 +504,7 @@ start_stream(struct snd_bebob *bebob, struct amdtp_stream *stream,
 
 	/* start amdtp stream */
 	err = amdtp_stream_start(stream,
-				 conn->resources.channel,
-				 conn->speed);
+				 conn->resources.channel, conn->speed, 0);
 end:
 	return err;
 }
