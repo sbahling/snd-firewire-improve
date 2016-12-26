@@ -234,7 +234,8 @@ static int pcm_capture_prepare(struct snd_pcm_substream *substream)
 
 	mutex_lock(&dg00x->mutex);
 
-	err = snd_dg00x_stream_start_duplex(dg00x, runtime->rate);
+	err = snd_dg00x_stream_start_duplex(dg00x, runtime->rate,
+					    runtime->period_size);
 	if (err >= 0)
 		amdtp_stream_pcm_prepare(&dg00x->tx_stream);
 
@@ -251,7 +252,8 @@ static int pcm_playback_prepare(struct snd_pcm_substream *substream)
 
 	mutex_lock(&dg00x->mutex);
 
-	err = snd_dg00x_stream_start_duplex(dg00x, runtime->rate);
+	err = snd_dg00x_stream_start_duplex(dg00x, runtime->rate,
+					    runtime->period_size);
 	if (err >= 0) {
 		amdtp_stream_pcm_prepare(&dg00x->rx_stream);
 		amdtp_dot_reset(&dg00x->rx_stream);

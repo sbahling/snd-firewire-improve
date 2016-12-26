@@ -273,7 +273,8 @@ void snd_dg00x_stream_destroy_duplex(struct snd_dg00x *dg00x)
 	fw_iso_resources_destroy(&dg00x->tx_resources);
 }
 
-int snd_dg00x_stream_start_duplex(struct snd_dg00x *dg00x, unsigned int rate)
+int snd_dg00x_stream_start_duplex(struct snd_dg00x *dg00x, unsigned int rate,
+				  unsigned int pcm_frames_per_period)
 {
 	unsigned int curr_rate;
 	int err = 0;
@@ -316,7 +317,8 @@ int snd_dg00x_stream_start_duplex(struct snd_dg00x *dg00x, unsigned int rate)
 
 		err = amdtp_stream_start(&dg00x->rx_stream,
 				dg00x->rx_resources.channel,
-				fw_parent_device(dg00x->unit)->max_speed, 0);
+				fw_parent_device(dg00x->unit)->max_speed,
+				pcm_frames_per_period);
 		if (err < 0)
 			goto error;
 
@@ -334,7 +336,8 @@ int snd_dg00x_stream_start_duplex(struct snd_dg00x *dg00x, unsigned int rate)
 	if (!amdtp_stream_running(&dg00x->tx_stream)) {
 		err = amdtp_stream_start(&dg00x->tx_stream,
 				dg00x->tx_resources.channel,
-				fw_parent_device(dg00x->unit)->max_speed, 0);
+				fw_parent_device(dg00x->unit)->max_speed,
+				pcm_frames_per_period);
 		if (err < 0)
 			goto error;
 

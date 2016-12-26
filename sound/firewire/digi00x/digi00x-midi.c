@@ -19,7 +19,7 @@ static int midi_open(struct snd_rawmidi_substream *substream)
 
 	mutex_lock(&dg00x->mutex);
 	dg00x->substreams_counter++;
-	err = snd_dg00x_stream_start_duplex(dg00x, 0);
+	err = snd_dg00x_stream_start_duplex(dg00x, 0, 0);
 	mutex_unlock(&dg00x->mutex);
 	if (err < 0)
 		snd_dg00x_stream_lock_release(dg00x);

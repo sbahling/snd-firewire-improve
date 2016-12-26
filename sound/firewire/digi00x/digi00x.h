@@ -143,7 +143,8 @@ int snd_dg00x_stream_get_clock(struct snd_dg00x *dg00x,
 int snd_dg00x_stream_check_external_clock(struct snd_dg00x *dg00x,
 					  bool *detect);
 int snd_dg00x_stream_init_duplex(struct snd_dg00x *dg00x);
-int snd_dg00x_stream_start_duplex(struct snd_dg00x *dg00x, unsigned int rate);
+int snd_dg00x_stream_start_duplex(struct snd_dg00x *dg00x, unsigned int rate,
+				  unsigned int pcm_frames_per_period);
 void snd_dg00x_stream_stop_duplex(struct snd_dg00x *dg00x);
 void snd_dg00x_stream_update_duplex(struct snd_dg00x *dg00x);
 void snd_dg00x_stream_destroy_duplex(struct snd_dg00x *dg00x);
