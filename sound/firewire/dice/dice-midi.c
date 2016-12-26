@@ -19,7 +19,7 @@ static int midi_open(struct snd_rawmidi_substream *substream)
 	mutex_lock(&dice->mutex);
 
 	dice->substreams_counter++;
-	err = snd_dice_stream_start_duplex(dice, 0);
+	err = snd_dice_stream_start_duplex(dice, 0, 0);
 
 	mutex_unlock(&dice->mutex);
 

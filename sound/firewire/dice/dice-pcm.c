@@ -309,7 +309,8 @@ static int capture_prepare(struct snd_pcm_substream *substream)
 	int err;
 
 	mutex_lock(&dice->mutex);
-	err = snd_dice_stream_start_duplex(dice, substream->runtime->rate);
+	err = snd_dice_stream_start_duplex(dice, substream->runtime->rate,
+					   substream->runtime->period_size);
 	mutex_unlock(&dice->mutex);
 	if (err >= 0)
 		amdtp_stream_pcm_prepare(stream);
@@ -323,7 +324,8 @@ static int playback_prepare(struct snd_pcm_substream *substream)
 	int err;
 
 	mutex_lock(&dice->mutex);
-	err = snd_dice_stream_start_duplex(dice, substream->runtime->rate);
+	err = snd_dice_stream_start_duplex(dice, substream->runtime->rate,
+					   substream->runtime->period_size);
 	mutex_unlock(&dice->mutex);
 	if (err >= 0)
 		amdtp_stream_pcm_prepare(stream);

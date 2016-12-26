@@ -208,7 +208,8 @@ extern const unsigned int snd_dice_rates[SND_DICE_RATES_COUNT];
 
 int snd_dice_stream_get_rate_mode(struct snd_dice *dice, unsigned int rate,
 				  enum snd_dice_rate_mode *mode);
-int snd_dice_stream_start_duplex(struct snd_dice *dice, unsigned int rate);
+int snd_dice_stream_start_duplex(struct snd_dice *dice, unsigned int rate,
+				 unsigned int pcm_frames_per_period);
 void snd_dice_stream_stop_duplex(struct snd_dice *dice);
 int snd_dice_stream_init_duplex(struct snd_dice *dice);
 void snd_dice_stream_destroy_duplex(struct snd_dice *dice);

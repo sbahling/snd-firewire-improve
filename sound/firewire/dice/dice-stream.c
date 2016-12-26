@@ -231,7 +231,8 @@ static int keep_resources(struct snd_dice *dice,
 }
 
 static int start_streams(struct snd_dice *dice, enum amdtp_stream_direction dir,
-			 unsigned int rate, struct reg_params *params)
+			 unsigned int rate, struct reg_params *params,
+			 unsigned int pcm_frames_per_period)
 {
 	__be32 reg[2];
 	enum snd_dice_rate_mode mode;
@@ -310,7 +311,8 @@ static int start_streams(struct snd_dice *dice, enum amdtp_stream_direction dir,
 		}
 
 		err = amdtp_stream_start(&streams[i], resources[i].channel,
-				fw_parent_device(dice->unit)->max_speed, 0);
+				fw_parent_device(dice->unit)->max_speed,
+				pcm_frames_per_period);
 		if (err < 0)
 			return err;
 	}
@@ -318,7 +320,8 @@ static int start_streams(struct snd_dice *dice, enum amdtp_stream_direction dir,
 	return err;
 }
 
-static int start_duplex_streams(struct snd_dice *dice, unsigned int rate)
+static int start_duplex_streams(struct snd_dice *dice, unsigned int rate,
+				unsigned int pcm_frames_per_period)
 {
 	struct reg_params tx_params, rx_params;
 	int i;
@@ -346,10 +349,12 @@ static int start_duplex_streams(struct snd_dice *dice, unsigned int rate)
 		return err;
 
 	/* Start both streams. */
-	err = start_streams(dice, AMDTP_IN_STREAM, rate, &tx_params);
+	err = start_streams(dice, AMDTP_IN_STREAM, rate, &tx_params,
+			    pcm_frames_per_period);
 	if (err < 0)
 		goto error;
-	err = start_streams(dice, AMDTP_OUT_STREAM, rate, &rx_params);
+	err = start_streams(dice, AMDTP_OUT_STREAM, rate, &rx_params,
+			    pcm_frames_per_period);
 	if (err < 0)
 		goto error;
 
@@ -385,7 +390,8 @@ error:
  *  - None streams are running.
  *  - All streams are running.
  */
-int snd_dice_stream_start_duplex(struct snd_dice *dice, unsigned int rate)
+int snd_dice_stream_start_duplex(struct snd_dice *dice, unsigned int rate,
+				 unsigned int pcm_frames_per_period)
 {
 	unsigned int curr_rate;
 	unsigned int i;
@@ -434,7 +440,7 @@ int snd_dice_stream_start_duplex(struct snd_dice *dice, unsigned int rate)
 
 	return 0;
 restart:
-	return start_duplex_streams(dice, rate);
+	return start_duplex_streams(dice, rate, pcm_frames_per_period);
 }
 
 /*
