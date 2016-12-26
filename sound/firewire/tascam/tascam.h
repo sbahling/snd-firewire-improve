@@ -141,7 +141,8 @@ int snd_tscm_stream_get_clock(struct snd_tscm *tscm,
 int snd_tscm_stream_init_duplex(struct snd_tscm *tscm);
 void snd_tscm_stream_update_duplex(struct snd_tscm *tscm);
 void snd_tscm_stream_destroy_duplex(struct snd_tscm *tscm);
-int snd_tscm_stream_start_duplex(struct snd_tscm *tscm, unsigned int rate);
+int snd_tscm_stream_start_duplex(struct snd_tscm *tscm, unsigned int rate,
+				 unsigned int pcm_frames_per_period);
 void snd_tscm_stream_stop_duplex(struct snd_tscm *tscm);
 
 void snd_tscm_stream_lock_changed(struct snd_tscm *tscm);

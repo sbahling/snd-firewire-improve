@@ -164,7 +164,8 @@ static int pcm_capture_prepare(struct snd_pcm_substream *substream)
 
 	mutex_lock(&tscm->mutex);
 
-	err = snd_tscm_stream_start_duplex(tscm, runtime->rate);
+	err = snd_tscm_stream_start_duplex(tscm, runtime->rate,
+					   runtime->period_size);
 	if (err >= 0)
 		amdtp_stream_pcm_prepare(&tscm->tx_stream);
 
@@ -181,7 +182,8 @@ static int pcm_playback_prepare(struct snd_pcm_substream *substream)
 
 	mutex_lock(&tscm->mutex);
 
-	err = snd_tscm_stream_start_duplex(tscm, runtime->rate);
+	err = snd_tscm_stream_start_duplex(tscm, runtime->rate,
+					   runtime->period_size);
 	if (err >= 0)
 		amdtp_stream_pcm_prepare(&tscm->rx_stream);
 

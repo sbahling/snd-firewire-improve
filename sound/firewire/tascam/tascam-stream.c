@@ -369,7 +369,8 @@ void snd_tscm_stream_destroy_duplex(struct snd_tscm *tscm)
 	fw_iso_resources_destroy(&tscm->tx_resources);
 }
 
-int snd_tscm_stream_start_duplex(struct snd_tscm *tscm, unsigned int rate)
+int snd_tscm_stream_start_duplex(struct snd_tscm *tscm, unsigned int rate,
+				 unsigned int pcm_frames_per_period)
 {
 	unsigned int curr_rate;
 	int err;
@@ -406,7 +407,8 @@ int snd_tscm_stream_start_duplex(struct snd_tscm *tscm, unsigned int rate)
 
 		err = amdtp_stream_start(&tscm->rx_stream,
 				tscm->rx_resources.channel,
-				fw_parent_device(tscm->unit)->max_speed, 0);
+				fw_parent_device(tscm->unit)->max_speed,
+				pcm_frames_per_period);
 		if (err < 0)
 			goto error;
 
@@ -420,7 +422,8 @@ int snd_tscm_stream_start_duplex(struct snd_tscm *tscm, unsigned int rate)
 	if (!amdtp_stream_running(&tscm->tx_stream)) {
 		err = amdtp_stream_start(&tscm->tx_stream,
 				tscm->tx_resources.channel,
-				fw_parent_device(tscm->unit)->max_speed, 0);
+				fw_parent_device(tscm->unit)->max_speed,
+				pcm_frames_per_period);
 		if (err < 0)
 			goto error;
 
