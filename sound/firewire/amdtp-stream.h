@@ -171,7 +171,6 @@ int amdtp_stream_add_pcm_hw_constraints(struct amdtp_stream *s,
 					struct snd_pcm_runtime *runtime);
 
 void amdtp_stream_pcm_prepare(struct amdtp_stream *s);
-unsigned long amdtp_stream_pcm_pointer(struct amdtp_stream *s);
 int amdtp_stream_pcm_ack(struct amdtp_stream *s);
 void amdtp_stream_pcm_abort(struct amdtp_stream *s);
 
@@ -230,6 +229,17 @@ static inline void amdtp_stream_pcm_trigger(struct amdtp_stream *s,
 static inline bool cip_sfc_is_base_44100(enum cip_sfc sfc)
 {
 	return sfc & 1;
+}
+
+/**
+ * amdtp_stream_pcm_pointer - get the PCM buffer position
+ * @s: the AMDTP stream that transports the PCM data
+ *
+ * Returns the current buffer position, in frames.
+ */
+static inline unsigned long amdtp_stream_pcm_pointer(struct amdtp_stream *s)
+{
+	return READ_ONCE(s->pcm_buffer_pointer);
 }
 
 /**
