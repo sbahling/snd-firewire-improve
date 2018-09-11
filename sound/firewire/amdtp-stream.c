@@ -160,7 +160,8 @@ int amdtp_stream_add_pcm_hw_constraints(struct amdtp_stream *s,
 		   SNDRV_PCM_INFO_INTERLEAVED |
 		   SNDRV_PCM_INFO_JOINT_DUPLEX |
 		   SNDRV_PCM_INFO_MMAP |
-		   SNDRV_PCM_INFO_MMAP_VALID;
+		   SNDRV_PCM_INFO_MMAP_VALID |
+		   SNDRV_PCM_INFO_SYNC_APPLPTR;
 
 	/* SNDRV_PCM_INFO_BATCH */
 	hw->periods_min = 2;
