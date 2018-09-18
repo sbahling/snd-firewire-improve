@@ -180,7 +180,7 @@ static int __maybe_unused hwdep_vm_fault(struct vm_fault *vmf)
 		return VM_FAULT_SIGBUS;
 	addr += offset;
 
-	page = vmalloc_to_page(addr);
+	page = virt_to_page(addr);
 	get_page(page);
 	vmf->page = page;
 
@@ -220,7 +220,7 @@ static void hwdep_free(struct snd_hwdep *hwdep)
 {
 	struct snd_tscm *tscm = hwdep->private_data;
 
-	vfree(tscm->status);
+	kfree(tscm->status);
 	tscm->status = NULL;
 }
 
@@ -237,7 +237,7 @@ int snd_tscm_create_hwdep_device(struct snd_tscm *tscm)
 	struct snd_hwdep *hwdep;
 	int err;
 
-	tscm->status = vzalloc(sizeof(*tscm->status));
+	tscm->status = kzalloc(sizeof(*tscm->status), GFP_KERNEL);
 	if (!tscm->status)
 		return -ENOMEM;
 
