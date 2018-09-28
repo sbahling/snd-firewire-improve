@@ -132,8 +132,6 @@ static int hwdep_release(struct snd_hwdep *hwdep, struct file *file)
 		tscm->dev_lock_count = 0;
 	spin_unlock_irq(&tscm->lock);
 
-	kfree(tscm->status);
-
 	return 0;
 }
 
