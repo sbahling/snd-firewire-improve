@@ -218,7 +218,7 @@ static void hwdep_free(struct snd_hwdep *hwdep)
 {
 	struct snd_tscm *tscm = hwdep->private_data;
 
-	kfree(tscm->status);
+	snd_free_pages((void *)tscm->status, PAGE_ALIGN(sizeof(*tscm->status)));
 	tscm->status = NULL;
 }
 
@@ -235,13 +235,15 @@ int snd_tscm_create_hwdep_device(struct snd_tscm *tscm)
 	struct snd_hwdep *hwdep;
 	int err;
 
-	tscm->status = kzalloc(sizeof(*tscm->status), GFP_KERNEL);
+	tscm->status = snd_malloc_pages(PAGE_ALIGN(sizeof(*tscm->status)),
+					GFP_KERNEL);
 	if (!tscm->status)
 		return -ENOMEM;
 
 	err = snd_hwdep_new(tscm->card, "Tascam", 0, &hwdep);
 	if (err < 0) {
-		kfree(tscm->status);
+		snd_free_pages((void *)tscm->status,
+			       PAGE_ALIGN(sizeof(*tscm->status)));
 		tscm->status = NULL;
 		return err;
 	}
