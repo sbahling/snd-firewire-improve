@@ -132,7 +132,7 @@ static int hwdep_release(struct snd_hwdep *hwdep, struct file *file)
 		tscm->dev_lock_count = 0;
 	spin_unlock_irq(&tscm->lock);
 
-	vfree(tscm->status);
+	kfree(tscm->status);
 
 	return 0;
 }
@@ -243,7 +243,7 @@ int snd_tscm_create_hwdep_device(struct snd_tscm *tscm)
 
 	err = snd_hwdep_new(tscm->card, "Tascam", 0, &hwdep);
 	if (err < 0) {
-		vfree(tscm->status);
+		kfree(tscm->status);
 		tscm->status = NULL;
 		return err;
 	}
