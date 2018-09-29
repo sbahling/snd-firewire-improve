@@ -606,7 +606,6 @@ static void isight_card_free(struct snd_card *card)
 	struct isight *isight = card->private_data;
 
 	fw_iso_resources_destroy(&isight->resources);
-	fw_unit_put(isight->unit);
 	mutex_destroy(&isight->mutex);
 }
 
@@ -636,19 +635,22 @@ static int isight_probe(struct fw_unit *unit,
 		return err;
 
 	isight = card->private_data;
+	card->private_free = isight_card_free;
 	isight->card = card;
 	mutex_init(&isight->mutex);
 	isight->unit = fw_unit_get(unit);
 	isight->device = fw_dev;
+
 	isight->audio_base = get_unit_base(unit);
 	if (!isight->audio_base) {
 		dev_err(&unit->device, "audio unit base not found\n");
 		err = -ENXIO;
-		goto err_unit;
+		goto error;
 	}
-	fw_iso_resources_init(&isight->resources, unit);
 
-	card->private_free = isight_card_free;
+	err = fw_iso_resources_init(&isight->resources, unit);
+	if (err < 0)
+		goto error;
 
 	strcpy(card->driver, "iSight");
 	strcpy(card->shortname, "Apple iSight");
@@ -673,12 +675,9 @@ static int isight_probe(struct fw_unit *unit,
 	dev_set_drvdata(&unit->device, isight);
 
 	return 0;
-
-err_unit:
-	fw_unit_put(isight->unit);
-	mutex_destroy(&isight->mutex);
 error:
 	snd_card_free(card);
+	fw_unit_put(isight->unit);
 	return err;
 }
 
@@ -699,15 +698,8 @@ static void isight_remove(struct fw_unit *unit)
 {
 	struct isight *isight = dev_get_drvdata(&unit->device);
 
-	isight_pcm_abort(isight);
-
-	snd_card_disconnect(isight->card);
-
-	mutex_lock(&isight->mutex);
-	isight_stop_streaming(isight);
-	mutex_unlock(&isight->mutex);
-
-	snd_card_free_when_closed(isight->card);
+	snd_card_free(isight->card);
+	fw_unit_put(isight->unit);
 }
 
 static const struct ieee1394_device_id isight_id_table[] = {
