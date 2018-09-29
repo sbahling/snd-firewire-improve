@@ -33,7 +33,6 @@ static void ff_free(struct snd_ff *ff)
 	snd_ff_transaction_unregister(ff);
 
 	mutex_destroy(&ff->mutex);
-	fw_unit_put(ff->unit);
 }
 
 static void ff_card_free(struct snd_card *card)
@@ -144,13 +143,12 @@ static void snd_ff_remove(struct fw_unit *unit)
 	 */
 	cancel_work_sync(&ff->dwork.work);
 
-	if (ff->registered) {
-		/* No need to wait for releasing card object in this context. */
-		snd_card_free_when_closed(ff->card);
-	} else {
-		/* Don't forget this case. */
+	if (ff->registered)
+		snd_card_free(ff->card);
+	else
 		ff_free(ff);
-	}
+
+	fw_unit_put(ff->unit);
 }
 
 static const struct snd_ff_spec spec_ff400 = {

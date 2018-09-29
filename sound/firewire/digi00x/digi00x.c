@@ -47,7 +47,6 @@ static void dg00x_free(struct snd_dg00x *dg00x)
 	snd_dg00x_transaction_unregister(dg00x);
 
 	mutex_destroy(&dg00x->mutex);
-	fw_unit_put(dg00x->unit);
 }
 
 static void dg00x_card_free(struct snd_card *card)
@@ -171,13 +170,12 @@ static void snd_dg00x_remove(struct fw_unit *unit)
 	 */
 	cancel_delayed_work_sync(&dg00x->dwork);
 
-	if (dg00x->registered) {
-		/* No need to wait for releasing card object in this context. */
-		snd_card_free_when_closed(dg00x->card);
-	} else {
-		/* Don't forget this case. */
+	if (dg00x->registered)
+		snd_card_free(dg00x->card);
+	else
 		dg00x_free(dg00x);
-	}
+
+	fw_unit_put(dg00x->unit);
 }
 
 static const struct ieee1394_device_id snd_dg00x_id_table[] = {

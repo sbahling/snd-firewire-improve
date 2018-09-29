@@ -59,7 +59,6 @@ static void motu_free(struct snd_motu *motu)
 	snd_motu_stream_destroy_duplex(motu);
 
 	mutex_destroy(&motu->mutex);
-	fw_unit_put(motu->unit);
 }
 
 /*
@@ -171,13 +170,12 @@ static void motu_remove(struct fw_unit *unit)
 	 */
 	cancel_delayed_work_sync(&motu->dwork);
 
-	if (motu->registered) {
-		/* No need to wait for releasing card object in this context. */
-		snd_card_free_when_closed(motu->card);
-	} else {
-		/* Don't forget this case. */
+	if (motu->registered)
+		snd_card_free(motu->card);
+	else
 		motu_free(motu);
-	}
+
+	fw_unit_put(motu->unit);
 }
 
 static void motu_bus_update(struct fw_unit *unit)

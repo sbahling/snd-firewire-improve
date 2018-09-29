@@ -131,7 +131,6 @@ static void bebob_free(struct snd_bebob *bebob)
 	snd_bebob_stream_destroy_duplex(bebob);
 
 	mutex_destroy(&bebob->mutex);
-	fw_unit_put(bebob->unit);
 }
 
 /*
@@ -373,13 +372,12 @@ static void bebob_remove(struct fw_unit *unit)
 	 */
 	cancel_delayed_work_sync(&bebob->dwork);
 
-	if (bebob->registered) {
-		/* No need to wait for releasing card object in this context. */
-		snd_card_free_when_closed(bebob->card);
-	} else {
-		/* Don't forget this case. */
+	if (bebob->registered)
+		snd_card_free(bebob->card);
+	else
 		bebob_free(bebob);
-	}
+
+	fw_unit_put(bebob->unit);
 }
 
 static const struct snd_bebob_rate_spec normal_rate_spec = {

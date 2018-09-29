@@ -190,7 +190,6 @@ static void efw_free(struct snd_efw *efw)
 	snd_efw_transaction_remove_instance(efw);
 
 	mutex_destroy(&efw->mutex);
-	fw_unit_put(efw->unit);
 }
 
 /*
@@ -357,13 +356,12 @@ static void efw_remove(struct fw_unit *unit)
 	 */
 	cancel_delayed_work_sync(&efw->dwork);
 
-	if (efw->registered) {
-		/* No need to wait for releasing card object in this context. */
-		snd_card_free_when_closed(efw->card);
-	} else {
-		/* Don't forget this case. */
+	if (efw->registered)
+		snd_card_free(efw->card);
+	else
 		efw_free(efw);
-	}
+
+	fw_unit_put(efw->unit);
 }
 
 static const struct ieee1394_device_id efw_id_table[] = {

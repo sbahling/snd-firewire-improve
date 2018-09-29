@@ -120,7 +120,6 @@ static void oxfw_free(struct snd_oxfw *oxfw)
 		snd_oxfw_stream_destroy_simplex(oxfw, &oxfw->tx_stream);
 
 	mutex_destroy(&oxfw->mutex);
-	fw_unit_put(oxfw->unit);
 }
 
 /*
@@ -326,13 +325,12 @@ static void oxfw_remove(struct fw_unit *unit)
 	 */
 	cancel_delayed_work_sync(&oxfw->dwork);
 
-	if (oxfw->registered) {
-		/* No need to wait for releasing card object in this context. */
-		snd_card_free_when_closed(oxfw->card);
-	} else {
-		/* Don't forget this case. */
+	if (oxfw->registered)
+		snd_card_free(oxfw->card);
+	else
 		oxfw_free(oxfw);
-	}
+
+	fw_unit_put(oxfw->unit);
 }
 
 static const struct compat_info griffin_firewave = {
