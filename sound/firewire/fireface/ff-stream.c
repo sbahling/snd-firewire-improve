@@ -140,7 +140,8 @@ void snd_ff_stream_destroy_duplex(struct snd_ff *ff)
 	destroy_stream(ff, AMDTP_OUT_STREAM);
 }
 
-int snd_ff_stream_start_duplex(struct snd_ff *ff, unsigned int rate)
+int snd_ff_stream_start_duplex(struct snd_ff *ff, unsigned int rate,
+			       unsigned int pcm_frames_per_period)
 {
 	unsigned int curr_rate;
 	enum snd_ff_clock_src src;
@@ -178,7 +179,8 @@ int snd_ff_stream_start_duplex(struct snd_ff *ff, unsigned int rate)
 
 		err = amdtp_stream_start(&ff->rx_stream,
 				ff->rx_resources.channel,
-				fw_parent_device(ff->unit)->max_speed, 0);
+				fw_parent_device(ff->unit)->max_speed,
+				pcm_frames_per_period);
 		if (err < 0)
 			goto error;
 
@@ -196,7 +198,8 @@ int snd_ff_stream_start_duplex(struct snd_ff *ff, unsigned int rate)
 	if (!amdtp_stream_running(&ff->tx_stream)) {
 		err = amdtp_stream_start(&ff->tx_stream,
 				ff->tx_resources.channel,
-				fw_parent_device(ff->unit)->max_speed, 0);
+				fw_parent_device(ff->unit)->max_speed,
+				pcm_frames_per_period);
 		if (err < 0)
 			goto error;
 

@@ -130,7 +130,8 @@ int amdtp_ff_init(struct amdtp_stream *s, struct fw_unit *unit,
 
 int snd_ff_stream_init_duplex(struct snd_ff *ff);
 void snd_ff_stream_destroy_duplex(struct snd_ff *ff);
-int snd_ff_stream_start_duplex(struct snd_ff *ff, unsigned int rate);
+int snd_ff_stream_start_duplex(struct snd_ff *ff, unsigned int rate,
+			       unsigned int pcm_frames_per_period);
 void snd_ff_stream_stop_duplex(struct snd_ff *ff);
 void snd_ff_stream_update_duplex(struct snd_ff *ff);
 
