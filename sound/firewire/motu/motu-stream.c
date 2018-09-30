@@ -111,7 +111,8 @@ static void stop_both_streams(struct snd_motu *motu)
 	fw_iso_resources_free(&motu->rx_resources);
 }
 
-static int start_isoc_ctx(struct snd_motu *motu, struct amdtp_stream *stream)
+static int start_isoc_ctx(struct snd_motu *motu, struct amdtp_stream *stream,
+			  unsigned int pcm_frames_per_period)
 {
 	struct fw_iso_resources *resources;
 	int err;
@@ -122,7 +123,7 @@ static int start_isoc_ctx(struct snd_motu *motu, struct amdtp_stream *stream)
 		resources = &motu->tx_resources;
 
 	err = amdtp_stream_start(stream, resources->channel,
-				 fw_parent_device(motu->unit)->max_speed, 0);
+		fw_parent_device(motu->unit)->max_speed, pcm_frames_per_period);
 	if (err < 0)
 		return err;
 
@@ -201,7 +202,8 @@ static int ensure_packet_formats(struct snd_motu *motu)
 					  sizeof(reg));
 }
 
-int snd_motu_stream_start_duplex(struct snd_motu *motu, unsigned int rate)
+int snd_motu_stream_start_duplex(struct snd_motu *motu, unsigned int rate,
+				 unsigned int pcm_frames_per_period)
 {
 	const struct snd_motu_protocol *protocol = motu->spec->protocol;
 	unsigned int curr_rate;
@@ -256,7 +258,8 @@ int snd_motu_stream_start_duplex(struct snd_motu *motu, unsigned int rate)
 			goto stop_streams;
 		}
 
-		err = start_isoc_ctx(motu, &motu->rx_stream);
+		err = start_isoc_ctx(motu, &motu->rx_stream,
+				     pcm_frames_per_period);
 		if (err < 0) {
 			dev_err(&motu->unit->device,
 				"fail to start IT context: %d\n", err);
@@ -273,7 +276,8 @@ int snd_motu_stream_start_duplex(struct snd_motu *motu, unsigned int rate)
 
 	if (!amdtp_stream_running(&motu->tx_stream) &&
 	    motu->capture_substreams > 0) {
-		err = start_isoc_ctx(motu, &motu->tx_stream);
+		err = start_isoc_ctx(motu, &motu->tx_stream,
+				     pcm_frames_per_period);
 		if (err < 0) {
 			dev_err(&motu->unit->device,
 				"fail to start IR context: %d", err);

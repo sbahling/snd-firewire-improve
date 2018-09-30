@@ -267,7 +267,8 @@ static int capture_prepare(struct snd_pcm_substream *substream)
 	int err;
 
 	mutex_lock(&motu->mutex);
-	err = snd_motu_stream_start_duplex(motu, substream->runtime->rate);
+	err = snd_motu_stream_start_duplex(motu, substream->runtime->rate,
+					   substream->runtime->period_size);
 	mutex_unlock(&motu->mutex);
 	if (err >= 0)
 		amdtp_stream_pcm_prepare(&motu->tx_stream);
@@ -280,7 +281,8 @@ static int playback_prepare(struct snd_pcm_substream *substream)
 	int err;
 
 	mutex_lock(&motu->mutex);
-	err = snd_motu_stream_start_duplex(motu, substream->runtime->rate);
+	err = snd_motu_stream_start_duplex(motu, substream->runtime->rate,
+					   substream->runtime->period_size);
 	mutex_unlock(&motu->mutex);
 	if (err >= 0)
 		amdtp_stream_pcm_prepare(&motu->rx_stream);
