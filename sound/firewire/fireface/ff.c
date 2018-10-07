@@ -32,8 +32,10 @@ static void ff_free(struct snd_ff *ff)
 	snd_ff_stream_destroy_duplex(ff);
 	snd_ff_transaction_unregister(ff);
 
-	mutex_destroy(&ff->mutex);
 	fw_unit_put(ff->unit);
+
+	mutex_destroy(&ff->mutex);
+	kfree(ff);
 }
 
 static void ff_card_free(struct snd_card *card)
@@ -100,9 +102,11 @@ static int snd_ff_probe(struct fw_unit *unit,
 {
 	struct snd_ff *ff;
 
-	ff = devm_kzalloc(&unit->device, sizeof(struct snd_ff), GFP_KERNEL);
-	if (!ff)
+	ff = kzalloc(sizeof(struct snd_ff), GFP_KERNEL);
+	if (ff == NULL)
 		return -ENOMEM;
+
+	/* initialize myself */
 	ff->unit = fw_unit_get(unit);
 	dev_set_drvdata(&unit->device, ff);
 

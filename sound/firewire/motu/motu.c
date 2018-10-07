@@ -57,9 +57,10 @@ static void motu_free(struct snd_motu *motu)
 	snd_motu_transaction_unregister(motu);
 
 	snd_motu_stream_destroy_duplex(motu);
+	fw_unit_put(motu->unit);
 
 	mutex_destroy(&motu->mutex);
-	fw_unit_put(motu->unit);
+	kfree(motu);
 }
 
 /*
@@ -142,13 +143,14 @@ static int motu_probe(struct fw_unit *unit,
 	struct snd_motu *motu;
 
 	/* Allocate this independently of sound card instance. */
-	motu = devm_kzalloc(&unit->device, sizeof(struct snd_motu), GFP_KERNEL);
-	if (!motu)
+	motu = kzalloc(sizeof(struct snd_motu), GFP_KERNEL);
+	if (motu == NULL)
 		return -ENOMEM;
+
+	motu->spec = (const struct snd_motu_spec *)entry->driver_data;
 	motu->unit = fw_unit_get(unit);
 	dev_set_drvdata(&unit->device, motu);
 
-	motu->spec = (const struct snd_motu_spec *)entry->driver_data;
 	mutex_init(&motu->mutex);
 	spin_lock_init(&motu->lock);
 	init_waitqueue_head(&motu->hwdep_wait);

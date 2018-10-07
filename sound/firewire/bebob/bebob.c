@@ -129,9 +129,10 @@ end:
 static void bebob_free(struct snd_bebob *bebob)
 {
 	snd_bebob_stream_destroy_duplex(bebob);
+	fw_unit_put(bebob->unit);
 
 	mutex_destroy(&bebob->mutex);
-	fw_unit_put(bebob->unit);
+	kfree(bebob);
 }
 
 /*
@@ -290,15 +291,15 @@ bebob_probe(struct fw_unit *unit, const struct ieee1394_device_id *entry)
 	}
 
 	/* Allocate this independent of sound card instance. */
-	bebob = devm_kzalloc(&unit->device, sizeof(struct snd_bebob),
-			     GFP_KERNEL);
-	if (!bebob)
+	bebob = kzalloc(sizeof(struct snd_bebob), GFP_KERNEL);
+	if (bebob == NULL)
 		return -ENOMEM;
-	bebob->unit = fw_unit_get(unit);
-	dev_set_drvdata(&unit->device, bebob);
 
+	bebob->unit = fw_unit_get(unit);
 	bebob->entry = entry;
 	bebob->spec = spec;
+	dev_set_drvdata(&unit->device, bebob);
+
 	mutex_init(&bebob->mutex);
 	spin_lock_init(&bebob->lock);
 	init_waitqueue_head(&bebob->hwdep_wait);

@@ -119,8 +119,10 @@ static void oxfw_free(struct snd_oxfw *oxfw)
 	if (oxfw->has_output)
 		snd_oxfw_stream_destroy_simplex(oxfw, &oxfw->tx_stream);
 
-	mutex_destroy(&oxfw->mutex);
 	fw_unit_put(oxfw->unit);
+
+	mutex_destroy(&oxfw->mutex);
+	kfree(oxfw);
 }
 
 /*
@@ -274,13 +276,14 @@ static int oxfw_probe(struct fw_unit *unit,
 		return -ENODEV;
 
 	/* Allocate this independent of sound card instance. */
-	oxfw = devm_kzalloc(&unit->device, sizeof(struct snd_oxfw), GFP_KERNEL);
-	if (!oxfw)
+	oxfw = kzalloc(sizeof(struct snd_oxfw), GFP_KERNEL);
+	if (oxfw == NULL)
 		return -ENOMEM;
+
+	oxfw->entry = entry;
 	oxfw->unit = fw_unit_get(unit);
 	dev_set_drvdata(&unit->device, oxfw);
 
-	oxfw->entry = entry;
 	mutex_init(&oxfw->mutex);
 	spin_lock_init(&oxfw->lock);
 	init_waitqueue_head(&oxfw->hwdep_wait);
